@@ -1,0 +1,304 @@
+import java.io.*;
+import java.net.*;
+import java.util.Scanner;
+
+
+public class Requester {
+	Socket requestSocket;
+	ObjectOutputStream out;
+	ObjectInputStream in;
+	String message;
+	String response;
+	Scanner input;
+
+	Requester() {
+		input = new Scanner(System.in);
+	}
+
+	void run() {
+		try {
+			// 1. creating a socket to connect to the server
+			requestSocket = new Socket("127.0.0.1", 2004);
+			System.out.println("Connected to localhost in port 2004");
+			// 2. get Input and Output streams
+			out = new ObjectOutputStream(requestSocket.getOutputStream());
+			out.flush();
+			in = new ObjectInputStream(requestSocket.getInputStream());
+			// 3: Communicating with the server
+
+			// Client Comms
+			try {
+				do {
+					message = (String) in.readObject();
+					System.out.println(message);
+					response = input.next();
+					sendMessage(response);
+
+					if (response.equalsIgnoreCase("1")) {
+						handleRegistration();
+					} 
+					else if (response.equalsIgnoreCase("2")) {
+						handleLogin();
+					}
+					else if (response.equalsIgnoreCase("0")) {
+						// Close connection
+					}
+					else {
+						message = (String) in.readObject();
+						System.out.println(message);
+					}
+					
+					message = (String) in.readObject();
+					System.out.println(message);
+					response = input.next();
+					sendMessage(response);
+
+				} while (response.equalsIgnoreCase("1"));
+				
+				if(!response.equalsIgnoreCase("1")) {
+					logout();
+				}
+
+			} 
+			catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void handleRegistration() throws IOException, ClassNotFoundException {
+		String name, ppsNum, mail, password, address, balance;
+
+		// User inputing user data
+		// User- name, PPS number, email address, password, address, and balance
+		message = (String)in.readObject();
+		System.out.println(message);
+		name = input.nextLine();
+		sendMessage(name);
+		
+		do {
+			message = (String)in.readObject();
+			System.out.println(message);
+			ppsNum = input.next();
+			sendMessage(ppsNum);
+			
+			// Check if ppsNum has a length of 9, and the first 7 characters are digits,
+            // and the last 2 characters are letters
+            if (ppsNum.length() == 9 &&
+                ppsNum.substring(0, 7).matches("\\d{7}") &&
+                ppsNum.substring(7).matches("[a-zA-Z]{2}")) {
+                break; // Exit the loop if the condition is met
+            }
+            else {
+            	message = (String) in.readObject();
+				System.out.println(message);
+            }
+		} while(true);
+		
+		do {
+			message = (String)in.readObject();
+			System.out.println(message);
+			mail = input.next();
+			sendMessage(mail);
+			
+			if(mail.contains("@") && 
+				mail.contains(".") && 
+				mail.contains("com")) {
+				break;
+			}
+			else {
+				message = (String) in.readObject();
+				System.out.println(message);
+			}
+		} while(true);
+	
+		message = (String)in.readObject();
+		System.out.println(message);
+		password = new String(System.console().readPassword("Enter password: "));
+		sendMessage(password);
+		
+		message = (String)in.readObject();
+		System.out.println(message);
+		address = input.next();
+		sendMessage(address);
+		
+		message = (String)in.readObject();
+		System.out.println(message);
+		balance = input.next();
+		sendMessage(balance);
+
+		message = (String)in.readObject();
+		System.out.println(message);
+	}
+
+	private void handleLogin() throws ClassNotFoundException, IOException {
+		String validLogin;
+		String exit = "";
+		do {
+			// Read the email input 
+			message = (String)in.readObject();
+			System.out.println(message);
+			String email = input.next();
+			sendMessage(email);
+
+			// Read the password input
+			message = (String)in.readObject();
+			System.out.println(message);
+			String pass = input.next();
+			sendMessage(pass);
+
+			validLogin = (String)in.readObject();
+			System.out.println(validLogin);
+			
+			if(!validLogin.equalsIgnoreCase("Invalid email or password.")) {
+				handleUserChoice();
+			}
+			
+			message = (String)in.readObject();
+			System.out.println(message);
+			exit = input.next();
+			sendMessage(exit);
+
+		}while(!exit.equalsIgnoreCase("-1"));
+		logout();
+	}
+	private void handleUserChoice() throws ClassNotFoundException, IOException {
+		boolean valid = true;;
+		try {
+			do {
+				message = (String) in.readObject();
+				System.out.println(message);
+				response = input.next();
+				sendMessage(response);
+
+				switch (response) {
+				case "3":
+					handleLodgeMoney();
+					break;
+				case "4":
+					handleRetrieveAllUsers();
+					break;
+				case "5":
+					handleTransferMoney();
+					break;
+				case "6":
+					handleViewTransactions();
+					break;
+				case "7":
+					handlePasswordChange();
+					break;
+				case "8":
+					logout();
+					break;
+				default:
+					message = (String) in.readObject();
+					System.out.println(message);
+					valid = false;
+				}
+
+			} while (!response.equalsIgnoreCase("8") || valid == false);
+
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void handleRetrieveAllUsers() throws IOException, ClassNotFoundException {
+		message = (String) in.readObject();
+		System.out.println(message);
+
+		// Read the total number of registered users
+		message = (String) in.readObject();
+		System.out.println(message);
+		int totalUsers = Integer.parseInt(message);
+
+		try {
+			// Read and display user information
+			for (int i = 0; i < totalUsers; i++) {
+				message = (String) in.readObject();
+				System.out.println(message);
+			}
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void handleLodgeMoney() throws IOException, ClassNotFoundException {
+		message = (String)in.readObject();
+		System.out.println(message);
+		String amount = input.next();
+		sendMessage(amount);
+
+		message = (String)in.readObject();
+		System.out.println(message);
+	}
+	private void handleTransferMoney() throws IOException, ClassNotFoundException {
+		message = (String)in.readObject();
+		System.out.println(message);
+		String recipientMail = input.next();
+		sendMessage(recipientMail);
+
+		message = (String)in.readObject();
+		System.out.println(message);
+		String recipientPps = input.next();
+		sendMessage(recipientPps);
+
+		message = (String)in.readObject();
+		System.out.println(message);
+		if(message.equals("Please enter the amount to transfer: ")) {
+			String amount = input.next();
+			sendMessage(amount);
+
+			message = (String)in.readObject();
+			System.out.println(message);
+		}
+		else {
+			message = (String)in.readObject();
+			System.out.println(message);
+		}
+	}
+	private void handlePasswordChange() throws IOException, ClassNotFoundException {
+		message = (String)in.readObject();
+		System.out.println(message);
+		String newPass = input.next();
+		sendMessage(newPass);
+
+		message = (String)in.readObject();
+		System.out.println(message);
+	}
+
+	private void handleViewTransactions() throws IOException, ClassNotFoundException {
+
+		message = (String)in.readObject();
+		System.out.println(message);
+
+		message = (String)in.readObject();
+		int size = Integer.parseInt(message);
+
+		for(int i = 0; i < size; i++) {
+			message = (String)in.readObject();
+			System.out.println(message);
+		}
+	}
+	private void logout() throws IOException, ClassNotFoundException {
+		message = (String)in.readObject();
+		System.out.println(message);
+	}
+
+	void sendMessage(String msg) {
+		try {
+			out.writeObject(msg);
+			out.flush();
+			System.out.println("client>" + msg);
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
+		}
+	}
+
+	public static void main(String args[]) {
+		Requester client = new Requester();
+		client.run();
+	}
+}

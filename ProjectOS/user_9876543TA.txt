@@ -1,0 +1,10 @@
+Received $200.50 from JOHN SMITH
+Sent $300.00 to PHIL DAVIS
+Received $250.00 from HARRY WHITE
+Sent $200.00 to SARAH ADAMS
+Received $150.00 from MICHAEL BROWN
+Sent $350.00 to EMILY GARCIA
+Received $400.00 from DAVID WILSON
+Sent $450.00 to LAURA MARTINEZ
+Received $500.00 from ROBERT LEE
+Sent $550.00 to JOHN SMITH

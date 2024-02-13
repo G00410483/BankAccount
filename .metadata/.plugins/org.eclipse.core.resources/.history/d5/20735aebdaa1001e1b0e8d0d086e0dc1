@@ -1,0 +1,270 @@
+/*
+ * The `Library` class manages a list of users and their transactions in a simple library or financial system.
+ * It provides functionalities for loading and saving user data, handling user transactions,
+ * adding new users, logging in users, transferring money between users, and retrieving user information.
+ * The class utilizes file I/O operations to store user data and transactions.
+ */
+
+import java.io.*;
+import java.util.LinkedList;
+import java.util.List;
+
+public class Library {
+
+	private List<User> userList;
+	private static final String USER_FILE = "user_data.txt";
+	private static final String FILE_PREFIX = "user_";
+
+	public Library() {
+		userList = new LinkedList<>();
+		loadUsers(); // Load existing users from file on startup
+	}
+
+	/**
+	* Loads user data from a file.
+	* Reads each line from the file, extracts user information, and creates User objects.
+	* The User objects are then added to the userList.
+	*/
+	private void loadUsers() {
+		// Using try to automatically close the BufferReader when done
+		// Read from a file specified by FileReader
+		// Reference: https://stackoverflow.com/questions/13405822/using-bufferedreader-readline-in-a-while-loop-properly
+		try (BufferedReader reader = new BufferedReader(new FileReader(USER_FILE))) {
+			// Reading each line from the file until there are no more lines
+			String line;
+			while ((line = reader.readLine()) != null) {
+				// Split the line into array using ','
+				String[] userData = line.split(",");
+				// Split data should have expected length of 6
+				if (userData.length == 6) {
+					// Extract and save user data from the array
+					String name = userData[0].trim();
+					String ppsNum = userData[1].trim();
+					String mail = userData[2].trim();
+					String pass = userData[3].trim();
+					String address = userData[4].trim();
+					String balance = userData[5].trim();
+					// Convert balance string to float 
+					float balanceValue = Float.parseFloat(balance);
+
+					// Creating new User object using provided data
+					User user = new User(name, ppsNum, mail, pass, address, balanceValue);
+					// Adding User object to the userList
+					userList.add(user);
+				}
+			}
+		} catch (IOException | NumberFormatException e) {
+			// Handle exceptions that may occur during the file reading
+			e.printStackTrace();
+		}
+	}
+	/**
+	 * Saves user data to a file.
+	 * Each user's information is formatted as a comma-separated string and written to the file.
+	 * The file is specified by the USER_FILE constant.
+	 */
+	void saveUsers() {
+		// Using try to automatically close the BufferReader when done
+		// Save from a file specified by FileReader
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(USER_FILE))) {
+			// Iterate through each User in the userList
+			for (User user : userList) {
+				// Formatting data as a string using ','
+				String line = String.format("%s,%s,%s,%s,%s,%.2f",
+						user.getName(), user.getPpsNum(), user.getMail(),
+						user.getPassword(), user.getAddress(), user.getBalance());
+				// Write string to the file
+				writer.write(line);
+				// Move to the next line of the file
+				writer.newLine();
+			}
+			// Handle exceptions that may occur during file operations
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	/**
+	 * Saves a user's transaction history to a file.
+	 * This method creates or appends to a file named after the user's PPS number,
+	 * then writes each transaction from the user's transaction list to the file,
+	 * followed by a new line. If the file or write operation encounters any errors,
+	 * they are printed to the console.
+	 */
+	void saveUserTransactions(User user) {
+		// Create the file name based on the user's PPS number
+		String transactionFileName = FILE_PREFIX + user.getPpsNum() + ".txt";
+
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(transactionFileName, true))) {
+			// Retrieve the list of transactions for the user
+			List<String> transactions = user.getTransactions();
+
+			// Write each transaction to the file, followed by a new line
+			for (String transaction : transactions) {
+				writer.write(transaction);
+				writer.newLine();
+			}
+			// Handle exceptions that may occur during file operations
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	/**
+	 * Adds a new user to the system with the provided information.
+	 * This method attempts to add a new user with the specified details to the system.
+	 * It checks for uniqueness of the user's email and PPS number before adding the user
+	 * to the user list. If the user is unique, they are added to the list, and the user list
+	 * is saved to a file. The initial transaction for the new user is also saved.
+	 */
+	public synchronized boolean addUser(String name, String ppsNum, String mail, String pass, String address, String balance) {
+		try {
+			// Convert balance string to float
+			float balanceValue = Float.parseFloat(balance);
+			// Create a new User with the provided information
+			User newUser = new User(name, ppsNum, mail, pass, address, balanceValue);
+
+			// Check for unique PPS Number and Email before adding the user
+			boolean isUnique = true;
+			for (User u : userList) {
+				if (u.getMail().equals(mail) || u.getPpsNum().equals(ppsNum)) {
+					isUnique = false;
+					break;
+				}
+			}
+			// Add the new user to the user list if it is unique
+			if (isUnique) {
+				userList.add(newUser);
+				// Save the updated user list to a file
+				saveUsers();
+				// Save the initial transaction for the new user
+				saveUserTransactions(newUser);
+				// Return true for successful addition
+				return true;
+			}
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+		// Return false if user can't be added
+		return false;
+	}
+	/**
+	 * Login user based on the provided email and password.
+	 * This method iterates through the list of users and checks if the provided email
+	 * and password match any user's credentials. If a match is found, the authenticated user
+	 * is returned; otherwise, null is returned.
+	 */
+	public synchronized User loginUser(String email, String password) {
+		// Iterate through the list of users
+		for (User user : userList) {
+			// Check if email and password match the current user
+			if (user.getMail().equals(email) && user.authenticate(password)) {
+				// Return the authenticated user
+				return user;
+			}
+		}
+		// If not found return null
+		return null;
+	}
+	
+	/**
+	 * This method retrieves a list of user information in the form of strings.
+	 * The file name is specified by the file prefix and user PPS number.
+	 */
+	public synchronized List<String> getAllUsers() {
+		// Create new LinkedList to store the user information
+		List<String> userStrings = new LinkedList<>();
+		
+		// Iterate through each object in the userList
+		for (User user : userList) {
+			// Converting each User object to its string format
+			userStrings.add(user.toString());
+		}
+		// Return the list of user information strings
+		return userStrings;
+	}
+	
+	/**
+	 * Transfers money from one user's account to another.
+	 * This method is money transfer operation by deducting the specified amount from 
+	 * the sender's balance and adding it to the recipient's balance, while
+	 * also updating transaction records for both users. If the sender has a sufficient
+	 * balance for the transaction, it is executed successfully, and true is returned;
+	 * otherwise, false is returned to indicate insufficient funds for the transfer.
+	 * Reference: https://stackoverflow.com/questions/39435649/spring-boot-test-service-class
+
+	 */
+	public synchronized boolean transferMoney(User sender, User recipient, float amount) {
+		// Check if the sender has sufficient balance for transaction
+		if (sender.getBalance() >= amount) {
+			// Deduct the amount from the sender's balance
+			sender.setBalance(sender.getBalance() - amount);
+			// Add the amount to the recipient's balance
+			recipient.setBalance(recipient.getBalance() + amount);
+
+			// Update transactions for sender and recipient
+			sender.addTransaction("Sent $" + amount + " to " + recipient.getName().toUpperCase());
+			recipient.addTransaction("Received $" + amount + " from " + sender.getName().toUpperCase());
+			
+			saveUsers(); // Save the updated user balances to file
+			saveUserTransactions(sender); // Save sender's transactions to file
+			saveUserTransactions(recipient); // Save recipient's transactions to file
+			
+			// Indicate successful transfer
+			return true;
+		}
+		// Return false if the sender does not have sufficient amount to transfer
+		return false;
+	}
+	
+	/**
+	 * Returning a copy of the user list
+	 */
+	public synchronized List<User> getUserList() {
+		return new LinkedList<>(userList); // Returning a copy of the user list
+	}
+	
+	/**
+	 * Finds and returns a user by their email address.
+	 * This method iterates through the user list and searches for a user with the
+	 * specified email address. If a user with a matching email address is found, it
+	 * is returned; otherwise, null is returned to indicate that no user was found.
+	 */
+	public User findUserByEmail(String recipientEmail) {
+		// Iterate through the userList 
+		for (User user : userList) {
+			// Looking for user with the specified email address
+			if (user.getMail().equals(recipientEmail)) {
+				// Return the user if a match is found
+				return user;
+			}
+		}
+		// User not found with the given email
+		return null; 
+	}
+	
+	/**
+	 * Provides a list of transaction records for the specified user.
+	 * This method retrieves and returns a list of transaction records associated with
+	 * the provided user by reading the transaction file based on the user's PPS number.
+	 */
+	public List<String> getUserTransactions(User currentUser) {
+		// Initialize an empty list to store the user's transaction
+		List<String> transactions = new LinkedList<>();
+		// Construct the file based on the user's PPS number
+		String transactionFileName = FILE_PREFIX + currentUser.getPpsNum() + ".txt";
+		
+		// Use try statement to automatically close the BufferReader when done
+		try (BufferedReader reader = new BufferedReader(new FileReader(transactionFileName))) {
+			// Read each line from the file and add it to the transaction list
+			String line;
+			// Read each line from the BufferedReader until there are no more lines
+			while ((line = reader.readLine()) != null) {
+				// Add the read line to the list of transactions
+				transactions.add(line);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// Return list of transactions, even if it's empty
+		return transactions;
+	}
+}

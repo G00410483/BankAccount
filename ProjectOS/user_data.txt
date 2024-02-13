@@ -1,0 +1,10 @@
+John Smith,1234567TA,john.smith@email.com,1234,32 Maple Street,12450.00
+Mary Johnson,9876543TA,mary.johnson@email.com,5678,28 Oak Avenue,3250.00
+Phil Davis,4567890TA,phil.davis@email.com,4321,35 Pine Lane,2000.00
+Harry White,7890123TA,harry.white@email.com,8765,41 Elm Road,12700.00
+Sarah Adams,2345678TA,sarah.adams@email.com,3456,29,250000.00
+Michael Brown,6543210TA,michael.brown@email.com,6543,36 Birch Drive,5500.00
+Emily Garcia,3456789TA,emily.garcia@email.com,7890,27 Cedar Path,3400.00
+David Wilson,8765432TA,david.wilson@email.com,8765,45 Willow Court,8000.00
+Laura Martinez,5678901TA,lauramartinez@email.com,9876,31 Cherry Boulevard,6000.00
+Robert Lee,2109876TA,robert.lee@email.com,2109,40 Spruce Terrace,9500.00
